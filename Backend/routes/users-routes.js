@@ -1,17 +1,13 @@
-const express =require('express');
+const express=require('express');
 
-const router = express.Router();
+const router =express.Router();
 
-const users=[{
-    name:"Nilesh",
-    uid:'u1'
-}];
+const userControllers=require('../controllers/users-controllers');
 
-router.get('/:uid',(req,res,next)=>{
-    const userID=req.params.uid;
-    const user = users.find(u=>{
-        return u.uid===userID;
-    });
-    res.json({user});
-});
-module.exports=router;
+router.get('/',userControllers.allUsers);
+
+router.post('/signup',userControllers.signup);
+
+router.post('/login',userControllers.login);
+
+module.exports = router;
