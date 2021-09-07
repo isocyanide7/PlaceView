@@ -2,7 +2,7 @@ const uuid=require('uuid');
 
 const HttpError=require('../models/http-error');
 
-const places=[{
+let places=[{
     id:"p1",
     title: "KGP Railway Station",
     description:"Railway station in Kharagpur",
@@ -15,7 +15,7 @@ const places=[{
 }]; 
 
 //Function to get a place by place ID
-const getByPlacebId = (req,res,next)=>{
+const getByPlaceId = (req,res,next)=>{
     const placeID=req.params.pid;
     const place=places.find(p=>{
         return p.id===placeID;
@@ -54,6 +54,30 @@ const createPlace=(req,res,next)=>{
     res.status(201).json({place:createdPlace});
 }
 
-exports.getByPlacebId=getByPlacebId;
+//Function to edit new place
+const editPlace=(req,res,next)=>{
+    const placeId=req.params.pid;
+    const {title,description}=req.body;
+    const updatedPlace=places.find(p=>p.id===placeId);
+    const placeIndex=places.findIndex(p=>p.id===placeId);
+    updatedPlace.title=title;
+    updatedPlace.description=description;
+    places[placeIndex]=updatedPlace;
+
+    res.status(200).json({place:updatedPlace});
+};
+
+//Function to delete place
+const deletePlace=(req,res,next)=>{
+    const placeId=req.params.pid;
+    const deletedplace=places.filter(p=>p.id!==placeId);
+    places=deletedplace;
+
+    res.status(200).json({message:"deleted"});
+};
+
+exports.getByPlaceId=getByPlaceId;
 exports.getByUserId=getByUserId; 
 exports.createPlace=createPlace;
+exports.editPlace=editPlace;
+exports.deletePlace=deletePlace;
