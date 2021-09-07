@@ -1,4 +1,5 @@
 const uuid=require('uuid');
+const {validationResult}=require('express-validator');
 
 const HttpError=require('../models/http-error');
 
@@ -40,6 +41,11 @@ const getByUserId =(req,res,next)=>{
 
 //Function to create new place
 const createPlace=(req,res,next)=>{
+    const errors=validationResult(req);
+    if(!errors.isEmpty()){
+        return next(new HttpError("Input not correct",422));
+    }
+
     const {title,description,location,address,creator}=req.body;
     const createdPlace={
         id:uuid.v4(),
@@ -56,6 +62,11 @@ const createPlace=(req,res,next)=>{
 
 //Function to edit new place
 const editPlace=(req,res,next)=>{
+    const errors=validationResult(req);
+    if(!errors.isEmpty()){
+        return next(new HttpError("Input not correct",422));
+    }
+
     const placeId=req.params.pid;
     const {title,description}=req.body;
     const updatedPlace=places.find(p=>p.id===placeId);

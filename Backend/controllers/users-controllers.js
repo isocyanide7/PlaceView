@@ -1,4 +1,5 @@
 const uuid=require('uuid')
+const {validationResult, body}=require('express-validator');
 
 const HttpError=require('../models/http-error');
 
@@ -14,10 +15,16 @@ const allUsers=(req,res,next)=>{
 };
 
 const signup=(req,res,next)=>{
+    const errors=validationResult(req);
+    if(!errors.isEmpty()){
+        console.log(errors);
+        return next(new HttpError(errors.array()[0].msg,422));
+    }
+
     const {name,email,password}=req.body;
     const existing=users.find(u=>u.email===email);
     if(existing){
-        return next(new HttpError("Already Existing user"),"222");
+        return next(new HttpError("Already Existing user"),"422");
     }
     const newUser={
         id:uuid.v4(),
