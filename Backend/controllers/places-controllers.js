@@ -29,13 +29,13 @@ const getByPlaceId = (req,res,next)=>{
 //Function to get a place by User ID
 const getByUserId =(req,res,next)=>{
     const userID=req.params.uid;
-    const place=places.find(p=>{
+    const newplaces=places.filter(p=>{
         return p.creator===userID;
     });
-    if(!place){
+    if(!newplaces || newplaces.length===0){
         return  next(new HttpError('User id not found',404));
     }
-    res.json({place});
+    res.json({places});
 }
 
 //Function to create new place
