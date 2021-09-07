@@ -12,6 +12,10 @@ router.post('/signup',
                 check('name')
                 .notEmpty()
                 .withMessage('Empty name not allowed'),
+                check('email').
+                normalizeEmail().
+                isEmail().
+                withMessage("Invalid Email"),
                 check('password')
                 .isLength({ min: 8 })
                 .withMessage('Password must be at least 5 chars long')

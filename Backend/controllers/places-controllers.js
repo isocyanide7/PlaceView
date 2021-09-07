@@ -46,12 +46,15 @@ const createPlace=(req,res,next)=>{
         return next(new HttpError("Input not correct",422));
     }
 
-    const {title,description,location,address,creator}=req.body;
+    const {title,description,address,creator}=req.body;
     const createdPlace={
         id:uuid.v4(),
         title,
         description,
-        location,
+        location:{
+            lat:53.4509161,
+            long:-2.4526631
+        },
         address,
         creator
     };
