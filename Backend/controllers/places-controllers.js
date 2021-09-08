@@ -1,7 +1,9 @@
 const uuid=require('uuid');
 const {validationResult}=require('express-validator');
+const mongoose=require('mongoose');
 
 const HttpError=require('../models/http-error');
+const Place =require('../models/places-schema');
 
 let places=[{
     id:"p1",
@@ -16,15 +18,18 @@ let places=[{
 }]; 
 
 //Function to get a place by place ID
-const getByPlaceId = (req,res,next)=>{
+const getByPlaceId = async(req,res,next)=>{
     const placeID=req.params.pid;
-    const place=places.find(p=>{
-        return p.id===placeID;
-    })
+    let place;
+    try{
+        place=await Place.findById(placeID);
+    }catch(err){
+        return next(new HttpError('Something went wrong,please try again'),'404');
+    }
     if(!place){
         return  next(new HttpError('Place id not found',404));
     }
-    res.json({place});
+    res.json({place:place.toObject({getters:true})});
 }
 
 //Function to get a place by User ID
@@ -40,25 +45,30 @@ const getByUserId =(req,res,next)=>{
 }
 
 //Function to create new place
-const createPlace=(req,res,next)=>{
+const createPlace=async(req,res,next)=>{
     const errors=validationResult(req);
     if(!errors.isEmpty()){
         return next(new HttpError("Input not correct",422));
     }
 
     const {title,description,address,creator}=req.body;
-    const createdPlace={
-        id:uuid.v4(),
+    const createdPlace=new Place({
         title,
         description,
         location:{
             lat:53.4509161,
             long:-2.4526631
         },
+        image:'https://i.pinimg.com/originals/7f/26/e7/7f26e71b2c84e6b16d4f6d3fd8a58bca.png',
         address,
         creator
-    };
-    places.push(createdPlace);
+    });
+
+    try{
+        await createdPlace.save();
+    }catch(err){
+        return next(new HttpError('Place not created',500));
+    }
 
     res.status(201).json({place:createdPlace});
 }
