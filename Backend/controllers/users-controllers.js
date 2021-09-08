@@ -2,6 +2,7 @@ const uuid=require('uuid')
 const {validationResult, body}=require('express-validator');
 
 const HttpError=require('../models/http-error');
+const User=require('../models/users-schema');
 
 const users=[{
     id: uuid.v4(),
@@ -14,36 +15,54 @@ const allUsers=(req,res,next)=>{
     res.status(200).json({users});
 };
 
-const signup=(req,res,next)=>{
+const signup=async(req,res,next)=>{
     const errors=validationResult(req);
     if(!errors.isEmpty()){
         console.log(errors);
         return next(new HttpError(errors.array()[0].msg,422));
     }
 
-    const {name,email,password}=req.body;
-    const existing=users.find(u=>u.email===email);
-    if(existing){
-        return next(new HttpError("Already Existing user"),"422");
+    const {name,email,password,places}=req.body;
+
+    let existing;
+    try{
+        existing=await User.findOne({email:email});
+    }catch(err){
+        return next(new HttpError('Signup failed1, please try again later',500));
     }
-    const newUser={
-        id:uuid.v4(),
+
+    if(existing){
+        return next(new HttpError('Email already registered'),422);
+    }
+
+    const createdUser=new User({
         name,
         email,
-        password
-    };
-    users.push(newUser);
-    res.status(201).json({"message":"signup successful"});
+        password,
+        image:'https://www.gannett-cdn.com/presto/2020/03/17/USAT/c0eff9ec-e0e4-42db-b308-f748933229ee-XXX_ThinkstockPhotos-200460053-001.jpg?crop=1170%2C658%2Cx292%2Cy120&width=1200',
+        places
+    });
+    try{
+        await createdUser.save();
+    }catch(err){
+        console.log(err);
+        return next(new HttpError('Signup2 failed, please try again later',500));
+    }
+
+    res.status(201).json({user:createdUser.toObject({getters:true})});
 };
 
-const login=(req,res,next)=>{
+const login=async(req,res,next)=>{
     const {email,password}=req.body;
-    const user=users.find(u=>u.email===email);
-    if(!user){
-        return next(new HttpError("User Not registered","222"));
+    let existing;
+    try{
+        existing=await User.findOne({email:email});
+    }catch(err){
+        return next(new HttpError('Login failed, please try again later',500));
     }
-    if(user.password!=password){
-        return next(new HttpError("Password not correct","222"));
+
+    if(!existing || existing.password!==password){
+        return next(new HttpError('Invalid credentials'),422);
     }
     res.status(200).json({"message":"Login successful!!"});
 };
