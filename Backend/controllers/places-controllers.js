@@ -1,8 +1,10 @@
 const uuid=require('uuid');
 const {validationResult}=require('express-validator');
+const mongoose = require('mongoose');
 
 const HttpError=require('../models/http-error');
 const Place =require('../models/places-schema');
+const User=require('../models/users-schema');
 
 //Function to get a place by place ID
 const getByPlaceId = async(req,res,next)=>{
@@ -54,8 +56,25 @@ const createPlace=async(req,res,next)=>{
         creator
     });
 
+    let user;
     try{
-        await createdPlace.save();
+        user=await User.findById(creator);
+     }catch(err){
+         return next(new HttpError('Creating place failed,please try again later',500));
+     }
+
+    if(!user){
+        return next(new HttpError('User not found',404));
+    } 
+
+    try{
+        const sess = await mongoose.startSession();
+        sess.startTransaction();
+        await createdPlace.save({session:sess});
+        user.places.push(createdPlace);
+        await user.save({session:sess});
+        await sess.commitTransaction();
+
     }catch(err){
         return next(new HttpError('Place not created',500));
     }
@@ -98,13 +117,21 @@ const deletePlace=async(req,res,next)=>{
 
     let place;
     try{
-        place=await Place.findById(placeId);
+        place=await Place.findById(placeId).populate('creator');
     }catch(err){
         return next(new HttpError('Something went wrong,please try again 1'),'404');
     }
+    if(!place){
+        return next(new HttpError('Place does not exist',404));
+    }
 
     try{
-        await place.remove();
+        const sess = await mongoose.startSession();
+        sess.startTransaction();
+        await place.remove({session:sess});
+        place.creator.places.pull(place);
+        await place.creator.save({session:sess});
+        await sess.commitTransaction();
     }catch(err){
         return next(new HttpError('Something went wrong,please try again'),'404');
     }

@@ -11,8 +11,16 @@ const users=[{
     password: "testing"
 }];
 
-const allUsers=(req,res,next)=>{
-    res.status(200).json({users});
+const allUsers=async(req,res,next)=>{
+    let users;
+    try{
+        users= await User.find({},'-password'
+        );
+    }catch(err){
+        return next(new HttpError('Something went wrong,please try again later'),401);
+    }
+
+    res.status(200).json({users:users.map(u=>u.toObject({getters:true}))});
 };
 
 const signup=async(req,res,next)=>{
@@ -22,7 +30,7 @@ const signup=async(req,res,next)=>{
         return next(new HttpError(errors.array()[0].msg,422));
     }
 
-    const {name,email,password,places}=req.body;
+    const {name,email,password}=req.body;
 
     let existing;
     try{
@@ -40,7 +48,7 @@ const signup=async(req,res,next)=>{
         email,
         password,
         image:'https://www.gannett-cdn.com/presto/2020/03/17/USAT/c0eff9ec-e0e4-42db-b308-f748933229ee-XXX_ThinkstockPhotos-200460053-001.jpg?crop=1170%2C658%2Cx292%2Cy120&width=1200',
-        places
+        places:[]
     });
     try{
         await createdUser.save();
